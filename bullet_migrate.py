@@ -74,12 +74,12 @@ for i, page in enumerate(content['month_list']):
 
 # current -> past
 content['current_week'].icon = '🌕'
-unfinished_task = recursive_find(content['current_week'], lambda r: getattr(
+unfinished_tasks = recursive_find(content['current_week'], lambda r: getattr(
     r, 'checked', None) == False, all=True)
 
 # future -> current
 content['next_week'].icon = '🚀'
-for task in unfinished_task:
+for task in unfinished_tasks:
     task.move_to(content['next_week'])
     task.title = '\>' + task.title
 
