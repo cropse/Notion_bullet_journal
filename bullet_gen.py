@@ -109,6 +109,7 @@ new_week.children.add_new(block.DividerBlock)
 new_week.children.add_new(block.DividerBlock)
 new_week.children.add_new(block.HeaderBlock, title="Weekly Inbox")
 new_week.icon = "🌎"
+new_week.set('format.page_full_width', True)  # full width for desktop
 
 # current -> past
 content["current_week"].icon = "🌕"
