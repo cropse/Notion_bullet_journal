@@ -1,32 +1,26 @@
-from datetime import datetime, timedelta
 from calendar import day_name
+from datetime import datetime, timedelta
 from typing import Callable
+
 import yaml
+from notion import block, collection
 from notion.client import NotionClient
-from notion import block
-from notion import collection
-
-with open(r"secret.yml") as file:
-    # The FullLoader parameter handles the conversion from YAML
-    # scalar values to Python the dictionary format
-    config = yaml.load(file, Loader=yaml.FullLoader)
-    PAGE_LINK = config["PAGE_LINK"]
-    NOTION_TOKEN = config["NOTION_TOKEN"]
-
-today = datetime.today()
-
-client = NotionClient(token_v2=NOTION_TOKEN)
-# Replace this URL with the URL of the page you want to edit
-pages = client.get_block(PAGE_LINK)
 
 
-def _get_next_monday(day):
+def _get_next_monday(day: datetime) -> datetime:
+    """
+    Get closed monday according your date
+    """
     while day.weekday() != 0:
         day += timedelta(days=1)
     return day
 
 
-def recursive_find(node, filter: Callable, all=False):
+def deep_find(node, filter: Callable, all=False):
+    """
+    Find the node acoording to filter.
+    Set `all` = True to get all node instead of first.
+    """
     result = []
     node_list = [node]
     while node_list:
@@ -41,6 +35,19 @@ def recursive_find(node, filter: Callable, all=False):
     return result if all else None
 
 
+with open(r"secret.yml") as file:
+    # The FullLoader parameter handles the conversion from YAML
+    # scalar values to Python the dictionary format
+    config = yaml.load(file, Loader=yaml.FullLoader)
+    PAGE_LINK = config["PAGE_LINK"]
+    NOTION_TOKEN = config["NOTION_TOKEN"]
+
+today = datetime.today()
+
+client = NotionClient(token_v2=NOTION_TOKEN)
+# Replace this URL with the URL of the page you want to edit
+pages = client.get_block(PAGE_LINK)
+
 content = {}
 month_list = []
 # fetch the data
@@ -54,11 +61,11 @@ for i, page in enumerate(pages.children):
 
 for i, page in enumerate(content["month_list"]):
 
-    result = recursive_find(page, lambda r: getattr(r, "icon", None) == "🚀")
+    result = deep_find(page, lambda r: getattr(r, "icon", None) == "🚀")
     if not content.get("current_week") and result:
         content.setdefault("current_week", result)
 
-    result = recursive_find(page, lambda r: getattr(r, "icon", None) == "🌎")
+    result = deep_find(page, lambda r: getattr(r, "icon", None) == "🌎")
     if not content.get("next_week") and result:
         content.setdefault("next_week", result)
 
@@ -105,11 +112,11 @@ new_week.icon = "🌎"
 
 # current -> past
 content["current_week"].icon = "🌕"
-unfinished_tasks = recursive_find(  # Todo task
+unfinished_tasks = deep_find(  # Todo task
     content["current_week"],
     lambda r: getattr(r, "checked", None) == False,
     all=True)
-unfinished_tasks += recursive_find(  # Page link task
+unfinished_tasks += deep_find(  # Page link task
     content["current_week"],
     lambda r: (isinstance(r, collection.CollectionRowBlock) and getattr(
         r, "done", None) == False),
