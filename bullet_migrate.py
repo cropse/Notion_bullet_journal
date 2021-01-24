@@ -39,54 +39,40 @@ def recursive_find(node, filter: Callable, all=False):
             node_list += r.children
     return result if all else None
 
-
-def get_element(content, element_name, node, finder: Callable):
-    if not content.get(element_name) and (
-            result := recursive_find(node, finder)):
-        return result
-
-
 content = {}
 month_list = []
 # fetch the data
 for i, page in enumerate(pages.children):
-    if not content.get('template') and (
-        result := recursive_find(page, lambda r: getattr(
-            r, 'title', None) == 'Empty Week Template')):
-        content.setdefault('template', result)
-
     if getattr(page, 'title', None) == 'Weekly Journal':
+        # expand each ColumnListBlock to month_list
         for p in pages.children[i+1: i+7]:
             month_list += p.children
         content.setdefault('month_list', month_list)
         break
 
 for i, page in enumerate(content['month_list']):
-    if not content.get('current_week') and (
-        result := recursive_find(
-            page, lambda r: getattr(r, 'icon', None) == '🚀')):
+
+    result = recursive_find(
+        page, lambda r: getattr(r, 'icon', None) == '🚀')
+    if not content.get('current_week') and result:
         content.setdefault('current_week', result)
-    if not content.get('next_week') and (
-        result := recursive_find(
-            page, lambda r: getattr(r, 'icon', None) == '🌎')):
+
+    result = recursive_find(
+        page, lambda r: getattr(r, 'icon', None) == '🌎')
+    if not content.get('next_week') and result:
         content.setdefault('next_week', result)
 
 
-# current -> past
-content['current_week'].icon = '🌕'
-unfinished_tasks = recursive_find(content['current_week'], lambda r: getattr(
-    r, 'checked', None) == False, all=True)
-
-# future -> current
-content['next_week'].icon = '🚀'
-for task in unfinished_tasks:
-    task.move_to(content['next_week'])
-    task.title = '\>' + task.title
-
 # create new future
 first_day: datetime = _get_next_monday(today) + timedelta(days=7)
+future_title = f"{first_day.strftime('%m%d')}-{(first_day+timedelta(days=6)).strftime('%m%d')}"
+
+if content['next_week'].title == future_title:
+    print("Seems you already created future task right?")
+    raise Exception("Seems you already created future task right?")
+
 new_week = content['month_list'][-first_day.month].children.add_new(
-    block.PageBlock, title=f"{first_day.strftime('%m%d')}-{(first_day+timedelta(days=6)).strftime('%m%d')}")
+    block.PageBlock, title=future_title)
 new_week.children.add_new(block.BreadcrumbBlock)
 new_week.children.add_new(block.DividerBlock)
 main_block = new_week.children.add_new(block.ColumnListBlock)
@@ -111,4 +97,16 @@ new_week.children.add_new(block.DividerBlock)
 new_week.children.add_new(block.DividerBlock)
 new_week.children.add_new(block.HeaderBlock, title="Weekly Inbox")
 new_week.icon = '🌎'
+
+# current -> past
+content['current_week'].icon = '🌕'
+unfinished_tasks = recursive_find(content['current_week'], lambda r: getattr(
+    r, 'checked', None) == False, all=True)
+
+# future -> current
+content['next_week'].icon = '🚀'
+for task in unfinished_tasks:
+    task.move_to(content['next_week'])
+    task.title = '\>' + task.title
+
 print("have fun")
