@@ -4,13 +4,14 @@ from typing import Callable
 import yaml
 from notion.client import NotionClient
 from notion import block
+from notion import collection
 
-with open(r'secret.yml') as file:
+with open(r"secret.yml") as file:
     # The FullLoader parameter handles the conversion from YAML
     # scalar values to Python the dictionary format
     config = yaml.load(file, Loader=yaml.FullLoader)
-    PAGE_LINK = config['PAGE_LINK']
-    NOTION_TOKEN = config['NOTION_TOKEN']
+    PAGE_LINK = config["PAGE_LINK"]
+    NOTION_TOKEN = config["NOTION_TOKEN"]
 
 today = datetime.today()
 
@@ -39,39 +40,39 @@ def recursive_find(node, filter: Callable, all=False):
             node_list += r.children
     return result if all else None
 
+
 content = {}
 month_list = []
 # fetch the data
 for i, page in enumerate(pages.children):
-    if getattr(page, 'title', None) == 'Weekly Journal':
+    if getattr(page, "title", None) == "Weekly Journal":
         # expand each ColumnListBlock to month_list
-        for p in pages.children[i+1: i+7]:
+        for p in pages.children[i + 1:i + 7]:
             month_list += p.children
-        content.setdefault('month_list', month_list)
+        content.setdefault("month_list", month_list)
         break
 
-for i, page in enumerate(content['month_list']):
+for i, page in enumerate(content["month_list"]):
 
-    result = recursive_find(
-        page, lambda r: getattr(r, 'icon', None) == '🚀')
-    if not content.get('current_week') and result:
-        content.setdefault('current_week', result)
+    result = recursive_find(page, lambda r: getattr(r, "icon", None) == "🚀")
+    if not content.get("current_week") and result:
+        content.setdefault("current_week", result)
 
-    result = recursive_find(
-        page, lambda r: getattr(r, 'icon', None) == '🌎')
-    if not content.get('next_week') and result:
-        content.setdefault('next_week', result)
-
+    result = recursive_find(page, lambda r: getattr(r, "icon", None) == "🌎")
+    if not content.get("next_week") and result:
+        content.setdefault("next_week", result)
 
 # create new future
 first_day: datetime = _get_next_monday(today) + timedelta(days=7)
-future_title = f"{first_day.strftime('%m%d')}-{(first_day+timedelta(days=6)).strftime('%m%d')}"
+future_title = (
+    f"{first_day.strftime('%m%d')}-{(first_day+timedelta(days=6)).strftime('%m%d')}"
+)
 
-if content['next_week'].title == future_title:
+if content["next_week"].title == future_title:
     print("Seems you already created future task right?")
     raise Exception("Seems you already created future task right?")
 
-new_week = content['month_list'][-first_day.month].children.add_new(
+new_week = content["month_list"][-first_day.month].children.add_new(
     block.PageBlock, title=future_title)
 new_week.children.add_new(block.BreadcrumbBlock)
 new_week.children.add_new(block.DividerBlock)
@@ -85,28 +86,40 @@ weekdays_block = new_week.children.add_new(block.ColumnListBlock)
 for i in range(5):
     _day_block = weekdays_block.children.add_new(block.ColumnBlock)
     _day_block.children.add_new(
-        block.SubheaderBlock, title=f"{day_name[i][:3]} {(first_day + timedelta(days=i)).day}",
-        color='orange_background')
+        block.SubheaderBlock,
+        title=f"{day_name[i][:3]} {(first_day + timedelta(days=i)).day}",
+        color="orange_background",
+    )
 weekend_block = new_week.children.add_new(block.ColumnListBlock)
 for i in range(5, 7):
     _day_block = weekend_block.children.add_new(block.ColumnBlock)
     _day_block.children.add_new(
-        block.SubheaderBlock, title=f"{day_name[i][:3]} {(first_day + timedelta(days=i)).day}",
-        color='blue_background')
+        block.SubheaderBlock,
+        title=f"{day_name[i][:3]} {(first_day + timedelta(days=i)).day}",
+        color="blue_background",
+    )
 new_week.children.add_new(block.DividerBlock)
 new_week.children.add_new(block.DividerBlock)
 new_week.children.add_new(block.HeaderBlock, title="Weekly Inbox")
-new_week.icon = '🌎'
+new_week.icon = "🌎"
 
 # current -> past
-content['current_week'].icon = '🌕'
-unfinished_tasks = recursive_find(content['current_week'], lambda r: getattr(
-    r, 'checked', None) == False, all=True)
+content["current_week"].icon = "🌕"
+unfinished_tasks = recursive_find(  # Todo task
+    content["current_week"],
+    lambda r: getattr(r, "checked", None) == False,
+    all=True)
+unfinished_tasks += recursive_find(  # Page link task
+    content["current_week"],
+    lambda r: (isinstance(r, collection.CollectionRowBlock) and getattr(
+        r, "done", None) == False),
+    all=True,
+)
 
 # future -> current
-content['next_week'].icon = '🚀'
+content["next_week"].icon = "🚀"
 for task in unfinished_tasks:
-    task.move_to(content['next_week'])
-    task.title = '\>' + task.title
+    task.move_to(content["next_week"])
+    task.title = "\>" + task.title
 
 print("have fun")
