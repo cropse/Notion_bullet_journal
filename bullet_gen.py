@@ -41,6 +41,7 @@ with open(r"secret.yml") as file:
     config = yaml.load(file, Loader=yaml.FullLoader)
     PAGE_LINK = config["PAGE_LINK"]
     NOTION_TOKEN = config["NOTION_TOKEN"]
+    ROUTINE = config["ROUTINE"]
 
 today = datetime.today()
 
@@ -108,6 +109,9 @@ for i in range(5, 7):
 new_week.children.add_new(block.DividerBlock)
 new_week.children.add_new(block.DividerBlock)
 new_week.children.add_new(block.HeaderBlock, title="Weekly Inbox")
+for r in ROUTINE:
+    new_week.children.add_new(block.TodoBlock, title=r, color="blue")
+
 new_week.icon = "🌎"
 new_week.set('format.page_full_width', True)  # full width for desktop
 
