@@ -121,7 +121,8 @@ unfinished_tasks = deep_find(  # Todo task
     content["current_week"],
     lambda r: getattr(r, "checked", None) == False,
     all=True)
-unfinished_tasks += deep_find(  # Page link task
+
+unfinished_page_tasks = deep_find(  # Page link task
     content["current_week"],
     lambda r: (isinstance(r, collection.CollectionRowBlock) and getattr(
         r, "done", None) == False),
@@ -133,5 +134,9 @@ content["next_week"].icon = "🚀"
 for task in unfinished_tasks:
     task.move_to(content["next_week"])
     task.title = "\>" + task.title
+
+for task in unfinished_page_tasks:
+    task.move_to(content["next_week"])
+    # task.title = "\>" + task.title
 
 print("have fun")
