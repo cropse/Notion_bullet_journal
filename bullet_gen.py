@@ -119,7 +119,8 @@ new_week.set('format.page_full_width', True)  # full width for desktop
 content["current_week"].icon = "🌕"
 unfinished_tasks = deep_find(  # Todo task
     content["current_week"],
-    lambda r: getattr(r, "checked", None) == False,
+    lambda r: (isinstance(r, block.TodoBlock) and getattr(
+        r, "checked", None) == False),
     all=True)
 
 unfinished_page_tasks = deep_find(  # Page link task
@@ -135,8 +136,7 @@ for task in unfinished_tasks:
     task.move_to(content["next_week"])
     task.title = "\>" + task.title
 
-for task in unfinished_page_tasks:
-    task.move_to(content["next_week"])
-    # task.title = "\>" + task.title
+for task in set(unfinished_page_tasks):
+    content["next_week"].children.add_alias(task)
 
 print("have fun")
