@@ -19,3 +19,4 @@ Note:
 - commend line mode(for specify date you want)
 - unittest maybe?
 - video demonstration
+- the function to add task to today?(command line)
