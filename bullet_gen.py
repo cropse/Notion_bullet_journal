@@ -120,7 +120,8 @@ content["current_week"].icon = "🌕"
 unfinished_tasks = deep_find(  # Todo task
     content["current_week"],
     lambda r: (isinstance(r, block.TodoBlock) and getattr(
-        r, "checked", None) == False),
+        r, "checked", None) == False) and
+        not isinstance(r.parent, collection.CollectionRowBlock),
     all=True)
 
 unfinished_page_tasks = deep_find(  # Page link task
