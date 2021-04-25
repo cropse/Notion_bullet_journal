@@ -80,6 +80,7 @@ if content["next_week"].title == future_title:
     print("Seems you already created future task right?")
     raise Exception("Seems you already created future task right?")
 
+# create brand new future task
 new_week = content["month_list"][-first_day.month].children.add_new(
     block.PageBlock, title=future_title)
 new_week.children.add_new(block.BreadcrumbBlock)
@@ -109,6 +110,7 @@ for i in range(5, 7):
 new_week.children.add_new(block.DividerBlock)
 new_week.children.add_new(block.DividerBlock)
 new_week.children.add_new(block.HeaderBlock, title="Weekly Inbox")
+# add routine in future task
 for r in ROUTINE:
     new_week.children.add_new(block.TodoBlock, title=r, color="blue")
 
