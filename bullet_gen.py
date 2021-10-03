@@ -2,6 +2,7 @@ from calendar import day_name
 from datetime import datetime, timedelta
 from typing import Callable
 
+from copy import copy
 import yaml
 from notion import block, collection
 from notion.client import NotionClient
@@ -22,7 +23,7 @@ def deep_find(node, filter: Callable, all=False):
     Set `all` = True to get all node instead of first.
     """
     result = []
-    node_list = [node]
+    node_list = copy(node) if isinstance(node, list) else [node]
     while node_list:
         r = node_list.pop()
         if filter(r):
@@ -60,17 +61,16 @@ for i, page in enumerate(pages.children):
         content.setdefault("month_list", month_list)
         break
 
-for i, page in enumerate(content["month_list"]):
+rocket = deep_find(content["month_list"],
+    lambda r: getattr(r, "icon", None) == "🚀")
+content.setdefault("current_week", rocket)
 
-    result = deep_find(page, lambda r: getattr(r, "icon", None) == "🚀")
-    if not content.get("current_week") and result:
-        content.setdefault("current_week", result)
-
-    result = deep_find(page, lambda r: getattr(r, "icon", None) == "🌎")
-    if not content.get("next_week") and result:
-        content.setdefault("next_week", result)
+earth = deep_find(content["month_list"],
+    lambda r: getattr(r, "icon", None) == "🌎")
+content.setdefault("next_week", earth)
 
 # create new future
+print("Let's create new future")
 first_day: datetime = _get_next_monday(today) + timedelta(days=7)
 future_title = (
     f"{first_day.strftime('%m%d')}-{(first_day+timedelta(days=6)).strftime('%m%d')}"
@@ -83,7 +83,7 @@ if content["next_week"].title == future_title:
 # create brand new future task
 new_week = content["month_list"][-first_day.month].children.add_new(
     block.PageBlock, title=future_title)
-new_week.children.add_new(block.BreadcrumbBlock)
+# new_week.children.add_new(block.BreadcrumbBlock)
 new_week.children.add_new(block.DividerBlock)
 main_block = new_week.children.add_new(block.ColumnListBlock)
 main_block.children.add_new(block.ColumnBlock).children.add_new(
