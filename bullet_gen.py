@@ -13,7 +13,7 @@ def _get_next_monday(day: datetime) -> datetime:
     Get closed monday according your date
     """
     while day.weekday() != 0:
-        # Before Friday, probably just forgot so go to past Mon.
+        # Before Friday, probably just forgot so back to past Mon.
         if day.weekday() <= 4:
             day -= timedelta(days=1)
         else:
